@@ -15,3 +15,19 @@ Have fun :D
 
 ## People running Extreme Carpaccio
 - Find out what people are saying about Extreme Carpaccio on [Twitter](https://twitter.com/search?vertical=default&q=%22extreme%20carpaccio%22%20OR%20%22Xtreme%20carpaccio%22%20OR%20%23ExtremeCarpaccio&src=typd)
+
+
+## Start and test the setup for dummies (with a node client)
+1. cd into server
+2. npm install
+3. npm start
+
+---------------------------------------
+
+1. cd into clients\javascript\node-plain
+2. npm install
+3. npm start
+4. note the ip and port
+5. go to localhost:3000 in your browser (= server dashboard)
+6. register you user via the ip and port shown in step 4
+7. check console output

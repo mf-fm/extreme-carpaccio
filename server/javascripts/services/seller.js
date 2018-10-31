@@ -3,7 +3,7 @@ var utils = require('../utils');
 var UrlAssembler = require('url-assembler');
 var _ = require('lodash');
 
-function SellerService (_sellers, _configuration) {
+function SellerService(_sellers, _configuration) {
   this.sellers = _sellers;
   this.configuration = _configuration;
 }
@@ -25,29 +25,29 @@ service.getCashHistory = function (chunk) {
   var lastIteration;
 
   var seller;
-  for(seller in cashHistory) {
+  for (seller in cashHistory) {
     cashHistoryReduced[seller] = [];
 
     var i = 0;
-    for(; i < cashHistory[seller].length; i++) {
-      if((i + 1) % chunk === 0) {
+    for (; i < cashHistory[seller].length; i++) {
+      if ((i + 1) % chunk === 0) {
         cashHistoryReduced[seller].push(cashHistory[seller][i]);
       }
     }
 
-    if(i % chunk !== 0) {
+    if (i % chunk !== 0) {
       cashHistoryReduced[seller].push(cashHistory[seller][i - 1]);
     }
 
     lastIteration = i;
   }
 
-  return {history: cashHistoryReduced, lastIteration: lastIteration};
+  return { history: cashHistoryReduced, lastIteration: lastIteration };
 };
 
 service.isAuthorized = function (name, password) {
   var seller = this.sellers.get(name);
-  if(seller) {
+  if (seller) {
     var samePwd = (seller.password === password);
     console.info('Attempt to re-register %s, same password %j', name, samePwd);
     return samePwd;
@@ -76,7 +76,7 @@ service.allSellers = function () {
 };
 
 service.updateCash = function (seller, expectedBill, actualBill, currentIteration) {
-  if(this.configuration.all().cashFreeze) {
+  if (this.configuration.all().cashFreeze) {
     console.info('Cash was not updated because cashFreeze config parameter is true');
     return;
   }
@@ -85,38 +85,46 @@ service.updateCash = function (seller, expectedBill, actualBill, currentIteratio
     var message;
     var loss;
 
-    if(_.isEmpty(actualBill)) {
-      loss = utils.fixPrecision(totalExpectedBill * .5, 2);
+    if (_.isEmpty(actualBill)) {
+      loss = utils.fixPrecision(totalExpectedBill * .8, 2);
       this.deductCash(seller, loss, currentIteration);
       message = 'Goddamn, ' + seller.name + ' has neither sent us a valid bill nor responded 404. ' + loss + ' will be charged.';
-      this.notify(seller, {'type': 'ERROR', 'content': message});
+      this.notify(seller, { 'type': 'ERROR', 'content': message });
     }
 
     else {
       var totalActualBill = utils.fixPrecision(actualBill.total, 2);
 
-      if(actualBill && totalExpectedBill === totalActualBill) {
+      if (actualBill && totalExpectedBill === totalActualBill) {
         this.addCash(seller, totalExpectedBill, currentIteration);
-        this.notify(seller, {'type': 'INFO', 'content': 'Hey, ' + seller.name + ' earned ' + totalExpectedBill});
+        this.notify(seller, { 'type': 'INFO', 'content': 'Hey, ' + seller.name + ' earned ' + totalExpectedBill });
       }
 
       else {
-        loss = utils.fixPrecision(totalExpectedBill * .5, 2);
+        //if the calculated bill is incorrect by more than 25% => 60% penalty
+        if (totalExpectedBill + (totalExpectedBill / 25) < totalActualBill || totalExpectedBill - (totalExpectedBill / 25) > totalActualBill) {
+          var lossPercentage = 0.6;
+        }
+        //if the amount is inorrect by less than 25% => 30% penalty
+        else {
+          var lossPercentage = 0.3;
+        }
+        loss = utils.fixPrecision(totalExpectedBill * lossPercentage, 2);
         this.deductCash(seller, loss, currentIteration);
-        message = 'Goddamn, ' + seller.name + ' replied ' + totalActualBill + ' but right answer was ' +  totalExpectedBill + '. ' + loss + ' will be charged.';
-        this.notify(seller, {'type': 'ERROR', 'content': message});
+        message = 'Goddamn, ' + seller.name + ' replied ' + totalActualBill + ' but right answer was ' + totalExpectedBill + '. ' + loss + ' will be charged (' + totalExpectedBill + '*' + lossPercentage + ').';
+        this.notify(seller, { 'type': 'ERROR', 'content': message });
       }
     }
   }
   catch (exception) {
-    this.notify(seller, {'type': 'ERROR', 'content': exception.message});
+    this.notify(seller, { 'type': 'ERROR', 'content': exception.message });
   }
 };
 
 service.setOffline = function (seller, offlinePenalty, currentIteration) {
   this.sellers.setOffline(seller.name);
 
-  if(offlinePenalty !== 0) {
+  if (offlinePenalty !== 0) {
     console.info('Seller ' + seller.name + ' is offline: a penalty of ' + offlinePenalty + ' is applied.');
     this.deductCash(seller, offlinePenalty, currentIteration);
   }
@@ -129,7 +137,7 @@ service.setOnline = function (seller) {
 service.notify = function (seller, message) {
   utils.post(seller.hostname, seller.port, seller.path + '/feedback', message);
 
-  if(message.type === 'ERROR') {
+  if (message.type === 'ERROR') {
     console.error('Notifying ' + seller.name + ': ' + message.content);
   } else {
     console.info('Notifying ' + seller.name + ': ' + message.content);

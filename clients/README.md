@@ -89,8 +89,14 @@ Note that:
 
 If your answer match the expected bill, then congratulations: you earned the amount of the bill!
 
-If you answer a total that does not match the expected bill, you will be charged with 50% of the amount of the right bill.
+If you don't send neither a valid answer nor 404 you will be charged with 80% of the amount of the right bill.
+
+If you answer a total that differs from the expected bill by more than 25%, you will be charged with 60% of the amount of the right bill.
+
+If you answer a total that differs from the expected bill by more than 25%, you will be charged with 30% of the amount of the right bill.
 
 Your answer will be ignored if one of these conditions are met:
 - your server is unreachable
 - you responded with HTTP code 404
+
+
